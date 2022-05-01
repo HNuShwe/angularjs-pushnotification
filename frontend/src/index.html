@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AngularJS</title>
+  <base href="/">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="theme-color" content="#1976d2">
+</head>
+<body>
+  <app-root></app-root>
+  <noscript>Please enable JavaScript to continue using this application.</noscript>
+  <script>
+    const VAPIDKeys = {
+    "publicKey": "public key generated on https://vapidkeys.com/",
+    }
+
+const config = { pushKey: VAPIDKeys.publicKey };
+async function subscribe(topic) {
+  const serviceworkerurl = "/assets/js/ngsw-worker.js";
+  navigator.serviceWorker.register(serviceworkerurl).then(async (swReg) => {
+    if(swReg.installing) {
+            console.log('Service worker installing');
+    } else if(swReg.waiting) {
+        console.log('Service worker installed');
+    } else if(swReg.active) {
+        console.log('Service worker active');
+        if (!('PushManager' in window)) {  
+            console.log('Push messaging isn\'t supported.');  
+            return;  
+          }
+        //
+        if (Notification.permission === 'denied') {  
+            console.log('The user has blocked notifications.');  
+            return;  
+        }   
+        const subscription = await swReg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(config.pushKey),
+        });
+            let isSubscribed = !(subscription === null);
+
+            if (!isSubscribed) {
+                // Subcribe to push notification
+                subscription = await sw.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey
+                });
+                isSubscribed = true;
+            }
+            // subscription incluces all the infomation that the nodejs application need to
+            // send a push notfication: browser endpoint, encryption key needed for sending data
+            console.log(JSON.stringify(subscription.toJSON()))
+            //save on db
+            alert("here is subscription info.\n" + JSON.stringify(subscription.toJSON()))
+            
+            return JSON.stringify(subscription.toJSON());
+    }
+    // Include below mentioned validations
+  });
+}
+function urlB64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+subscribe("news"); 
+
+  </script>
+</body>
+</html>
